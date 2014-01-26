@@ -1,0 +1,50 @@
+SOURCE 1        # 1: Source is GUPPI raw data file
+INFILE /media/sata1/guppi_56465_J1713+0747_0006.0000.raw # name of data file
+TFLAGS 2        # 0: do nothing
+FFLAGS 0        # 0: do nothing
+T0     0.01     # [s] 
+T1     0      # [s]; 0: don't 
+T2     0      # [s]; 0: don't  
+EXCLUDE   1     # don't include channel  1 (base-1) channel-wise or full-bandwidth analysis
+EXCLUDE   2     # don't include channel  2 (base-1) channel-wise or full-bandwidth analysis
+EXCLUDE   3    
+EXCLUDE   4    
+EXCLUDE   5    
+EXCLUDE   6    
+EXCLUDE   7    
+EXCLUDE   8    
+EXCLUDE   9    
+EXCLUDE  10  
+EXCLUDE  11       
+EXCLUDE  12    
+EXCLUDE  13    
+EXCLUDE  14    
+EXCLUDE  15    
+EXCLUDE  16     
+EXCLUDE  17    
+EXCLUDE  18    
+EXCLUDE  19    
+EXCLUDE  20    
+EXCLUDE  21    
+EXCLUDE  22    
+EXCLUDE  23    
+EXCLUDE  24 
+EXCLUDE  25 
+EXCLUDE  26 
+EXCLUDE  27 
+EXCLUDE  28 
+EXCLUDE  29  
+EXCLUDE  31 
+EXCLUDE  32     # don't include channel 32 (base-1) channel-wise or full-bandwidth analysis
+N_SUB_CH 1024
+SUB_CH_METHOD 0 # 0: FFT
+TBL_METHOD  1
+TBL_ORDER   2
+TBL_UNITS   0 # 0: Natural
+NFFT 1024 
+NFCH  768
+FBL_METHOD  1
+FBL_ORDER  19
+FBL_UNITS   0 # 0: Natural
+
+
