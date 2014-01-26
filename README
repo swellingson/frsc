@@ -1,0 +1,178 @@
+
+Front-end for RF Signal Characterization (FRSC)
+Steve Ellingson, Virginia Tech, ellingson@vt.edu
+Jan 26, 2014
+
+
+Introduction & Overview
+=======================
+
+This is an initial implementation of the "FRSC" concept, in this case as a software entity operating on an existing data file.  A FRSC software entity is something that reads data from a supported radio telescope / file format, applies some analysis, and outputs the results in the FRSC standard output format.  The purpose of FRSC is to provide a rapid (potentially real-time) assessment of RF signal characteristics which can subsequently be used for instrument diagnostics, RFI identification, RFI mitigation, event detection, and so on.  For more general information and background, see:
+http://www.ece.vt.edu/swe/rg/131218_GB_RFI_Project.pdf
+in particular, slides 5-8.
+
+The primary goals of the code in this first software release are to (1) define the FRSC output format (this is "ra_format.c") and (2) provide a demonstration of the FRSC concept that works on GUPPI raw data files.
+
+
+File Identification
+===================
+
+README:  
+This file
+
+ra_format.c:  
+This defines the FRSC standard output format, as it currently exists.  It is written as a C-language file which is intended to be #include'd with other files that require knowledge of this format.  It should be structured and sufficiently-well commented to be self-explanatory.
+  
+ra_format_defines.h: 
+These are macro defines for ra_format.c that should simplify & clarify C-language implementations.
+
+frsc.c: 
+The top-level C-language file (i.e., contains "main()") for the demonstration code.  Most of the rest of the files, particularly those beginning "ra_", are #include'd into frsc.c.
+
+frsc_read.c: 
+A program which can be used to read the output of the demonstration code.  Some initial diagnostic information is sent to stdout, and details are sent to a data file as simple ASCII tabular output that should be easy to plot.
+
+frsc_read.gp: 
+A Gnuplot script that reads the output of frsc_read and produces plots of the data therein.  Used in the "quick start" example.
+
+A make file is provided which compiles frsc and frsc_read.
+
+
+Required Packages & Hardware
+============================
+
+The software is intended to run on Linux. It should, however, be relatively easy to port to other any other OS with a reasonable C compiler.
+
+frsc and frsc_read use only standard and common C libraries; should be no need to install additional packages to get these to compile in Linux.  (Heads up: Once dynamic spectrum is implemented, FFTW will be probably required.)
+
+frsc uses a lot of RAM, most of which is dynamically allocated.  The quick start demo should run on a PC with at least 4 GB, but it's possible to specify conditions that require much more RAM.  frsc should exit with an informative warning if the necessary RAM is not available. 
+
+
+Quick Start / Tutorial
+======================
+
+This demo uses the file:
+guppi_56465_J1713+0747_0006.0000.raw 
+which is available to NRAO users on: 
+/lustre/pulsar/scratch/1713+0747_global/raw
+See:
+http://www.ece.vt.edu/swe/rg/GUPPI_TF_Analysis_131108.tar.gz
+for a description of this data.
+
+1. Place all files in a directory of your choice.  It is not necessary to put the GUPPI data file in this directory.
+
+2. cd to source code directory.
+
+3. "$ make"
+
+4. "$ ./frsc".  The output should look like this:
+This is frsc v.1
+  A 'struct ra_header_struct' is 496 bytes
+  A 'struct ra_td' is 164016 bytes
+Execution begins: UTC Sun Jan 26 18:12:29 2014
+FATAL: main(): <jobfile> not specified
+
+5. frsc wants a "job file".  The job file specifies everything frsc needs to know about the data and the requested analysis.  A ready-to-go job file named "quick_start.job" is included, but the path to the data file will need to be edited to match your local situation.  To do this, edit the following line in quick_start.job:
+INFILE /media/sata1/guppi_56465_J1713+0747_0006.0000.raw # name of data file
+
+6. "$ ./frsc quick_start.job".  The code will take many minutes to process the entire data file, and the formal output will go to a binary file called "out.dat".  stdout will look something like this:
+This is frsc v.1
+  A 'struct ra_header_struct' is 496 bytes
+  A 'struct ra_td' is 164016 bytes
+Execution begins: UTC Sun Jan 26 17:43:51 2014
+<jobfile>='quick_start.job'
+Here are some things I learned from the jobfile:
+  header0.esource = 1
+Analyzing header...
+Here is what I learned from the header:
+  rg_analyze_header() says OVERLAP = 512 samples
+  rg_analyze_header() says OBSFREQ = 1378.125000 MHz (center freq of observation)
+  rg_analyze_header() says OBSBW = -200.000000 MHz (BW of bandpass incl. all channels)
+  rg_analyze_header() says CHAN_BW = -6.250000 MHz (BW of a single channel)
+  rg_analyze_header() says OBSNCHAN = 32 (# channels in dataset)
+  rg_analyze_header() says fs (1/TBIN) = 6.250000e+06 samples/s
+nT0 = 62500; header0.T0 recomputed, now 1.000000e-02. blk0 (buffer) is 7.629395 MB
+nT1 = 0; header0.T1 recomputed, now 0.000000e+00. blk1 (buffer) is 0.000000 MB
+Beginning main loop...
+main(): nblock=2 (header read), fstart0=1.340000 [s]
+main(): nblock=3 (header read), fstart0=2.680000 [s]
+main(): nblock=4 (header read), fstart0=4.020000 [s]
+main(): nblock=5 (header read), fstart0=5.360000 [s]
+...
+main(): nblock=127 (header read), fstart0=169.070000 [s]
+main(): nblock=128 (header read), fstart0=170.410000 [s]
+rg_read_header() returned 1... end-of-file garbage? Setting bDone=1
+main(): nblock=129 (header read), fstart0=171.750000 [s]
+In main(), feof(fp_in) is TRUE.  Setting bDone=1
+End of main loop.
+Program execution began: UTC Sun Jan 26 17:43:51 2014
+Program execution ended: UTC Sun Jan 26 18:07:30 2014
+Program excution took 1419 s = 0.394167 h
+Elapsed time spent on Activity 1 (reading file) = 1281.834701 s
+Elapsed time spent on Activity 2 (swallow())    = 136.759535 s
+Bye.
+
+7. Now you can use frsc_read to examine the output.  Do this: "$ ./frsc_read out.dat 30".  The parameter "30" tells frsc_read to output details for channel 30 (only).  The channel 30 details go to "frsc_read.dat" in ASCII tabular format.  The stdout output from frsc_read looks like this:
+<infile>='out.dat'
+<ch>=30
+Contents of first report's header:
+  header.eType=0
+  header.err=0
+  header.iReportVersion=0
+  header.iRAVersion=1
+  header.eSource=1
+  header.sInfo='/media/sata1/guppi_56465_J1713+0747_0006.0000.raw'
+  header.tvStart: UTC Thu Jan  1 00:00:00 1970
+  header.nCh=32
+  header.bw=-200000000.000000
+  header.fc=1378125000.000000
+  header.fs=6250000.000000
+  header.tflags=0x02
+  header.fflags=0x00
+  header.T0=0.010000
+  header.T1=0.000000
+  header.T2=0.000000
+  header.bChIn:   0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x00000000dfffffff 
+  header.bChInCh: 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x0000000000000000 0x00000000dfffffff 
+  header.nSubCh=1024
+  header.eSubChMethod=0
+  header.eTBL_Method=1
+  header.nTBL_Order=2
+  header.eTBL_Units=0
+  header.nfft=1024
+  header.nfch=768
+  header.eFBL_Method=1
+  header.nFBL_Order=19
+  header.eFBL_Units=0
+  header.iSeqNo=0
+  header.fStart=0.000000
+Now summarizing all reports found, one line per report in order received:
+  header.eType=0 header.err=0 header.iSeqNo=0 header.fStart=0.000000
+  header.eType=1 header.err=0 header.iSeqNo=1 header.fStart=0.000000
+  header.eType=1 header.err=0 header.iSeqNo=2 header.fStart=0.010000
+  header.eType=1 header.err=0 header.iSeqNo=3 header.fStart=0.020000
+...
+  header.eType=1 header.err=0 header.iSeqNo=17172 header.fStart=171.710000
+  header.eType=1 header.err=0 header.iSeqNo=17173 header.fStart=171.720000
+  header.eType=1 header.err=0 header.iSeqNo=17174 header.fStart=171.730000
+  header.eType=1 header.err=0 header.iSeqNo=17175 header.fStart=171.740000
+
+8.  For convenience, a Gnuplot script is provided to observe some output graphically.  (This can of course be done using any plotting software capable of reading ASCII tabular data.)  Fire up Gnuplot and do "> load 'frsc_read.gp'".  A plot of <|X|^2> and <|Y|^2> vs. time in seconds appears.  Note the spikes every 12 seconds -- that's the Bedford radar.  There's another 12-second-period signal that appears only in the X polarization.  Still trying to figure that one out!
+
+9.  For other uses, you use different job files.  The format of lines and use of keywords can be inferred from the example job file and examination of "ra_read_jobfile.c".  Similarly you can edit or modify frsc_read.c (a very simple program) to suit whatever purposes. 
+
+
+Limitations & Warnings
+=======================
+
+The only option currently implemented for "SOURCE" is "1"; i.e., GUPPI raw data file.  (However, I have tried to write frsc in such a way that there should be no particular difficulty in upgrading the code to support direct UDP/TCP input and output.)
+
+The only analysis that is currently supported is TFLAGS = 2 and FFLAGS = 0.  That is, you can get time-domain statistics on a channel-by-channel basis; but any other analysis options, if selected, are ignored.
+
+The T1 and T2 update rates are currently ignored and should be set to zero in the job file.  The T0 update rate *is* implemented; the value specified in the job file is used. 
+
+Median statistics are not computed.  Any median values appearing in output should be considered invalid.
+
+
+
+
